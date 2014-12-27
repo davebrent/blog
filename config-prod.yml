@@ -1,0 +1,17 @@
+mode: production
+
+title: dbp
+email: dapoulter@gmail.com
+description: audio visual code
+
+baseurl: ""
+url: "http://davepoulter.net"
+
+markdown: kramdown
+
+exclude:
+  - Makefile
+  - Gemfile
+  - Gemfile.lock
+  - config-dev.yml
+  - config-prod.yml
