@@ -10,6 +10,8 @@ url: "http://davepoulter.net"
 markdown: kramdown
 
 exclude:
+  - LICENSE.md
+  - README.md
   - Makefile
   - Gemfile
   - Gemfile.lock
