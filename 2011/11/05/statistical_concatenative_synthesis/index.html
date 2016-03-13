@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="@dave_brent">
+    <link href='http://fonts.googleapis.com/css?family=Oxygen+Mono' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://davepoulter.net/static/css/main.css">
+  </head>
+  <body>
+  <div id="container">
+    <div id="header">
+      <a href="/">davepoulter.net</a>
+      <a href="https://github.com/davebrent" target="_blank">
+        Github
+      </a>
+    </div>
+    <div id="content" role="main">
+      
+<div class="post">
+  <div class="post-header">
+    <h1>Statistical concatenative synthesis</h1>
+    <h2></h2>
+  </div>
+  <div class="post-body">
+    <p><img src="http://davepoulter.net/2011/11/05/statistical_concatenative_synthesis/statconcat.png"></p>
+<p>Statconcat was completed as my undergraduate disertation. It looked at the use
+of a <a href="http://en.wikipedia.org/wiki/Markov_chain">markov chain</a> as part of a unit selection algorithm for
+<a href="http://en.wikipedia.org/wiki/Concatenative_synthesis">concatenative synthesis</a>. The project is made up of a <a href="http://puredata.info/">Pure Data</a> patch
+with some <a href="http://www.le-son666.com/software/pdj/">Java externals</a>.</p>
+<h2>Usage</h2>
+<ol>
+<li>Under "Search" click "Folder". Select a folder containing the sound files you
+   would like to use to populate the "Database". Then click "Start".</li>
+<li>The selected files will then be sliced, analyzed and stored.</li>
+<li>Under "Input" "Target" click "L". Select a synthesis target that will drive
+   the unit selection.</li>
+<li>If you check the pure data console you should see a starting message. After
+   a few seconds the output buffer should be populated with samples. Click "P"
+   to play the re-synthesized sound.</li>
+</ol>
+<h2>Issues</h2>
+<p>This is a very old project and was one of the first programs I had written in
+Java that actually did something useful. As such, there are many problems and
+the code is absolutely awful.</p>
+<p>The patch does not handle large samples very well, so it is best to use short
+samples (under 30 seconds or so) and avoid loading hundreds of files. There is
+also a problem where the same target sound cannot be loaded consecutively,
+otherwise the patch will crash.</p>
+<p>Apart from that it may still be useful, and it is certainly possible to get
+some weird sounds out of it.</p>
+<h2>Example</h2>
+<p>Here is a quick audio example. The sounds that were used for resynthesis come
+from the usual drum breaks (amen, funky drummer etc.) and some short reggae
+vocal samples.</p>
+<p>Target sound:</p>
+<p><audio>
+  <source src="/media/statconcat_example_target.ogg" type="audio/ogg"> </source>
+  Your browser does not support the audio tag.
+</audio></p>
+<p>Resynthesised sound using the markov chain:</p>
+<p><audio>
+  <source src="/media/statconcat_example_output.ogg" type="audio/ogg"> </source>
+  Your browser does not support the audio tag.
+</audio></p>
+<p>Code can be found on <a href="https://github.com/davebrent/dbp/">github</a></p>
+  </div>
+</div>
+
+    </div>
+    <div id="footer">
+    </div>
+  </div>
+</body>
+</html>

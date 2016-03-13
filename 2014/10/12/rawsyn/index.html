@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="@dave_brent">
+    <link href='http://fonts.googleapis.com/css?family=Oxygen+Mono' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://davepoulter.net/static/css/main.css">
+  </head>
+  <body>
+  <div id="container">
+    <div id="header">
+      <a href="/">davepoulter.net</a>
+      <a href="https://github.com/davebrent" target="_blank">
+        Github
+      </a>
+    </div>
+    <div id="content" role="main">
+      
+<div class="post">
+  <div class="post-header">
+    <h1>Automated sonification of non audio files</h1>
+    <h2></h2>
+  </div>
+  <div class="post-body">
+    <p>The sonification of non-audio files is a well known <a href="http://en.wikipedia.org/wiki/Databending">data bending</a>
+technique that can generate interesting and abrasive noises. Often its
+done in programs such as <a href="http://audacity.sourceforge.net/">Audacity</a> that can open raw files and interpret
+them as audio.</p>
+<p><img src="http://davepoulter.net/2014/10/12/rawsyn/rawsyn-audacity.png"></p>
+<p>I wanted to find a way to automate this process as I was getting bored of
+clicking around Audacity when trying out a handful of files.</p>
+<p>After looking at the code in Audacity that is responsible for importing raw
+files it was nice to see <a href="https://code.google.com/p/audacity/source/browse/audacity-src/trunk/src/import/ImportRaw.cpp">nothing magic was happening</a>: most of the code
+is setting up a dialog and guessing default values for it. The main part
+simply opens the file with <a href="http://www.mega-nerd.com/libsndfile/">libsndfile</a> with a major format of
+<code>SF_FORMAT_RAW</code> and sets <a href="http://www.mega-nerd.com/libsndfile/api.html#open">sub formats</a> based on the result of the dialog.</p>
+<p>So I wrote a small command line <a href="https://github.com/davebrent/dbp/tree/master/apps/rawsyn">program</a> that does the same thing: it takes
+an input file, opens it with <a href="http://www.mega-nerd.com/libsndfile/">libsndfile</a> (providing options for available
+formats) and writes the result out to a seperate file.</p>
+<p>Here is a couple of example outputs from the program, the first is a small
+selection from a 2gb virtual box file and the second is the <code>.Framework</code>
+file from <a href="https://github.com/rogerwang/node-webkit">node-webkit</a>.</p>
+<iframe width="100%" height="200" scrolling="no" frameborder="no"
+        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/171770713&amp;auto_play=false&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;visual=true"> </iframe>
+
+<iframe width="100%" height="200" scrolling="no" frameborder="no"
+        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/171771553&amp;auto_play=false&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;visual=true"> </iframe>
+  </div>
+</div>
+
+    </div>
+    <div id="footer">
+    </div>
+  </div>
+</body>
+</html>

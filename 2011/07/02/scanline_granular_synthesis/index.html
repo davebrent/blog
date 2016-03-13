@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="@dave_brent">
+    <link href='http://fonts.googleapis.com/css?family=Oxygen+Mono' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://davepoulter.net/static/css/main.css">
+  </head>
+  <body>
+  <div id="container">
+    <div id="header">
+      <a href="/">davepoulter.net</a>
+      <a href="https://github.com/davebrent" target="_blank">
+        Github
+      </a>
+    </div>
+    <div id="content" role="main">
+      
+<div class="post">
+  <div class="post-header">
+    <h1>Scanline granular synthesis</h1>
+    <h2></h2>
+  </div>
+  <div class="post-body">
+    <iframe src="http://player.vimeo.com/video/25905946"
+        width="580" height="275" frameborder="0"> </iframe>
+
+<p>This is a live clip from a Max/MSP/Jitter patch I made in 2010.</p>
+<p>The patch uses a <a href="http://en.wikipedia.org/wiki/Scan_line">scan line</a> from a
+video to fill a buffer which is then played back by a granular synthesiser. The
+sound is used to create a NURBS object in OpenGL and then textured with the
+original video.</p>
+<p>The patch works by taking a row of pixels from each frame of a video, the
+scanline, the row of pixels is a four-plane char matrix with dimensions of 320
+x 1. For the matrix to be useful as a waveform it will need to be converted
+from four dimensions to one dimension.</p>
+<p>This is done using the <code>jit.rgb2luma</code> object which converts ARGB matrices to
+monochrome using the equation:</p>
+<pre><code>L = (0.299*R) + (0.587*G) + (0.114*B)
+</code></pre>
+<p>The values are then converted from char (0 – 255) to float32 (0.0 – 1.0).</p>
+<p>Before the matrix is poked into a buffer the matrix is copied, inverted (-1.0 –
+0.0) and concatenated with the original matrix using the <code>jit.concat</code> object.
+This new matrix, now 640 x 1, is then poked into a buffer using <code>jit.buffer~</code>.</p>
+<p>This is done so that when the waveform is played back there will be silence for
+a solid black frame and a square wave for a solid white frame.</p>
+<p>The buffer is played back using overlapped pulse grain generators as shown in
+this pure data patch <a href="http://www.nullpointer.co.uk/content/?p=353">here</a>.</p>
+<p>The NURBS object is created using the Catch Nurbs patch described in the
+<a href="http://cycling74.com/2006/02/14/jitter-recipes-book-2/">jitter recipes book 2</a> with the sound generated from the overlapping pulse
+grain generators.</p>
+<blockquote>
+<p>Our audio is converted to 1-D matrices by the <code>jit.catch~</code> object and then
+downsampled and passed along to a matrix using 'dstdim' messages
+(see TimeScrubber). The resulting matrix is then downsampled further, sliced
+into 3 columns and packed into a 3-plane named matrix.</p>
+<p>From there, we use <code>jit.slide</code> to smooth the movement, and jit.op to scale
+the values to the desired range. This is then given to the jit.gl.nurbs object
+as a 'ctlmatrix'.</p>
+</blockquote>
+<p>To create a more interesting shape the NURBS object is textured with the
+original scanline that was used to create the waveform (before it was converted
+to monochrome).</p>
+<p><a href="https://github.com/davebrent/dbp/">Grab the patch here</a></p>
+  </div>
+</div>
+
+    </div>
+    <div id="footer">
+    </div>
+  </div>
+</body>
+</html>
