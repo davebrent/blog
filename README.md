@@ -4,5 +4,7 @@ http://davepoulter.net
 
 ## Develop
 
-    bundle install
-    make serve
+    virtualenv env
+    source env/bin/activate
+    pip install -r requirements.txt
+    ./blog develop
