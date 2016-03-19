@@ -1,0 +1,156 @@
+@charset "utf-8";
+
+$base-font-size: 13px;
+$base-unit: 8px;
+
+$color-black: #333;
+$color-grey: #eee;
+$color-anchor: #ff633f;
+$color-anchor-hover: darken($color-anchor, 10%);
+$small: "only screen and (min-width: 768px)";
+
+@mixin clearfix {
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body, a, ul, p, dd, ol, pre, code {
+  font-family: "Oxygen Mono", sans-serif;
+  font-size: $base-font-size;
+  color: $color-black;
+  line-height: $base-unit * 3;
+  margin: 0 0 $base-unit * 3 0;
+}
+
+body {
+  margin: 0;
+}
+
+ol, ul {
+  padding-left: $base-unit * 3;
+}
+
+code {
+  background-color: $color-grey;
+  padding: 0 $base-unit / 2;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size: $base-font-size;
+  text-rendering: optimizeLegibility;
+  margin: 0 0 $base-unit * 2 0;
+}
+
+h1 { font-size: 24px; line-height: ($base-unit * 2) * 2; }
+h2 { font-size: 16px; line-height: ($base-unit * 2) * 1; }
+h3 { font-size: 14px; line-height: ($base-unit * 2) * 1; }
+h4 { font-size: 13px; line-height: ($base-unit * 2) * 1; }
+
+a {
+  color: $color-anchor;
+}
+
+a:hover {
+  color: $color-anchor-hover;
+}
+
+#container {
+  padding-top: $base-unit * 4;
+  padding-bottom: $base-unit * 2;
+  margin: 0 auto;
+  width: 90%;
+}
+
+@media #{$small} {
+  #container {
+    margin: 0;
+    width: $base-unit * 80;
+    padding-left: $base-unit * 4;
+  }
+}
+
+#header {
+  @include clearfix;
+  margin-bottom: $base-unit * 2;
+
+  h1 a, h1 a:hover {
+    color: $color-black;
+    text-decoration: none;
+  }
+
+  .navigation,
+  .navigation li {
+    line-height: $base-unit * 4;
+    float: left;
+    list-style: none;
+    font-family: "Helvetica Neue", Helvetica;
+    font-weight: bold;
+  }
+
+  .navigation li {
+    padding-left: $base-unit * 3;
+  }
+}
+
+#footer {
+  padding: $base-unit * 3 0;
+}
+
+.post-body {
+  img {
+    max-width: 100%;
+    margin: 0 auto;
+    display: block;
+  }
+
+  iframe, blockquote {
+    margin-bottom: $base-unit * 2
+  }
+
+  blockquote {
+    padding-left: $base-unit * 2;
+    font-style: italic;
+    margin: 0;
+
+    p {
+       color: lighten($color-black, 25%);
+    }
+  }
+}
+
+#gallery {
+  @include clearfix;
+  padding: 0;
+  margin: 0;
+
+  li {
+    margin-bottom: $base-unit * 2;
+    width: 47.5%;
+    float: left;
+  }
+
+  li:nth-child(even) {
+    margin-left: 5% !important;
+  }
+
+  img {
+    width: 100%;
+    margin: 0;
+    height: auto;
+    margin-bottom: $base-unit * 2
+  }
+
+  ul, li {
+    padding: 0;
+    list-style: none;
+  }
+}

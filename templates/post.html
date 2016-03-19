@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block meta %}
+<title>dbp | {{ page.metadata.title }}</title>
+<meta name="description" content="{{ page.metadata.description }}">
+<meta property="og:locale" content="en_GB" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="{{ page.metadata.title }}" />
+<meta property="og:url" content="{{ page.url }}" />
+{# <meta property="og:image" content="{{base_url}}/img/headers/{{{image}}}" /> #}
+{# <meta property="og:site_name" content="{{ share.og_site_name }}" /> #}
+<meta property="og:description" content="{{ page.metadata.description }}" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:description" content="{{ page.metadata.description }}"/>
+<meta name="twitter:title" content="{{ page.metadata.title }}"/>
+{# <meta name="twitter:image:src" content="{{base_url}}/img/headers/{{{image}}}"/> #}
+<meta name="twitter:creator" content="@dave_brent"/>
+{% endblock %}
+
+{% block content %}
+<div class="post">
+  <div class="post-header">
+    <h1>{{ page.metadata.title }}</h1>
+  </div>
+  <div class="post-body">
+    {{ page.contents }}
+  </div>
+</div>
+{% endblock %}
