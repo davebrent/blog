@@ -1,0 +1,466 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+usage:
+  ./blog [options] <mode>
+  ./blog -h | --help
+  ./blog --version
+
+options:
+  -h, --help          Show this screen
+  --version           Show version
+  --verbose           Output more detailed info
+  --base-url=<url>    Serve site on port [default: http://localhost:8000]
+  --output-dir=<dir>  Site output directory [default: build]
+"""
+
+import codecs
+import doctest
+import functools
+import hashlib
+import os
+import re
+import shutil
+import subprocess
+import sys
+import urlparse
+import logging
+import yaml
+
+from docopt import docopt
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
+from jinja2 import exceptions as jinja_exceptions
+from markdown import markdown
+from livereload import Server
+from scss import Compiler as ScssCompiler
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("blog")
+
+
+FILE_DIRS = [
+    "static",
+    "content",
+    "media"
+]
+
+HASH_FILE_EXTS = [
+    ".js",
+    ".css"
+]
+
+TEXT_FILE_EXTS = [
+    ".html",
+    ".md",
+    ".scss",
+    ".css",
+    ".js",
+    ".xml",
+    ".txt",
+    ".glsl"
+]
+
+FB_APP_ID = "1020523678022760"
+GA_ACCOUNT = "UA-35028388-1"
+SITE_URL = "http://davepoulter.net"
+
+
+def remove_trailing_slash(url):
+    return url if url[-1] != "/" else url[:-1]
+
+
+class Site(object):
+    """
+    base_url    -- Sites base URL
+    output_dir  -- Site output directory
+    posts       -- Array of posts
+    static      -- Static files keyed by original filename relative to root
+    git_sha1    -- The sha1 of site repo
+    fb_app_id   -- Facebook app ID
+    ga_account  -- Google analytics account
+    """
+    def __init__(self, base_url="", output_dir="", fb_app_id="",
+                 ga_account=""):
+        self.base_url = remove_trailing_slash(base_url)
+        self.output_dir = output_dir
+        self.posts = []
+        self.static = {}
+        git_version_cmd = ["git", "rev-parse", "HEAD"]
+        self.git_sha1 = subprocess.check_output(git_version_cmd).rstrip()
+        self.fb_app_id = fb_app_id
+        self.ga_account = ga_account
+
+
+class File(object):
+    """
+    src         -- Original filepath
+    dest        -- Destination filepath
+    extension   -- Extension of destination filepath
+    contents    -- Files current contents
+    encoding    -- File encoding if known (otherwise None)
+    url         -- Output file URL
+    metadata    -- Dictionary describing the file
+    """
+    def __init__(self, filepath):
+        self.src = filepath
+        self.dest = filepath
+        _, self.extension = os.path.splitext(self.src)
+        self.contents = None
+        self.url = None
+        self.metadata = {}
+        self.encoding = None
+
+    def set_extension(self, extension):
+        if not extension.startswith("."):
+            extension = ".{}".format(extension)
+
+        directory = os.path.dirname(self.dest)
+        filename = os.path.basename(self.dest)
+
+        name, _ = os.path.splitext(filename)
+        filename = name + extension
+
+        self.dest = os.path.join(directory, filename)
+        self.extension = extension
+
+    def get_extension(self):
+        return self.extension
+
+    def __repr__(self):
+        return "File(src={}, dest={})".format(self.src, self.dest)
+
+
+def get_files(paths, *args):
+    """Scan all directory paths creating a list of files"""
+    result = []
+    for path in paths:
+        for root, _, files in os.walk(path):
+            for filename in files:
+                if filename.startswith("."):
+                    continue
+                filepath = os.path.join(root, filename)
+                result.append(File(filepath))
+    return result
+
+
+def open_files(files, site):
+    for f in files:
+        if f.get_extension() in TEXT_FILE_EXTS:
+            with codecs.open(f.src, "r", "utf-8") as fp:
+                f.contents = fp.read()
+                f.encoding = "utf-8"
+        else:
+            with open(f.src, "rb") as fp:
+                f.contents = fp.read()
+    return files
+
+
+def parse_metadata(files, site):
+    """Parses yaml frontmatter at the top of any file whos encoding is known"""
+    frontmatter_ptrn = re.compile(r"^-{3,}$", re.MULTILINE)
+    for f in files:
+        if not f.encoding:
+            continue
+
+        try:
+            _, frontmatter, contents = frontmatter_ptrn.split(f.contents, 2)
+        except ValueError:
+            continue
+
+        f.contents = contents
+        f.metadata = yaml.load(frontmatter)
+    return files
+
+
+def compile_markdown(files, site):
+    """Compile files with markdown set to true in its metadata"""
+    for f in files:
+        if f.encoding and f.metadata.get("markdown"):
+            f.contents = markdown(f.contents)
+            f.set_extension(".html")
+    return files
+
+
+def compile_jinja(template_dir, files, site):
+    """Compiles any unicode file as a possible jinja template"""
+    env = Environment(loader=FileSystemLoader(template_dir))
+    for f in files:
+        if not f.encoding:
+            continue
+
+        # Allow the contents of any file be a jinja template
+        try:
+            tpl = env.from_string(f.contents)
+        except jinja_exceptions.TemplateSyntaxError:
+            # TODO: Issue a warning that can be turned off
+            continue
+
+        f.contents = tpl.render(page=f, site=site)
+
+        # Let the file call another template
+        template_name = f.metadata.get("template")
+        if template_name is None:
+            continue
+
+        # Then run it through the requested template
+        tpl = env.get_template(template_name)
+        f.contents = tpl.render(page=f, site=site)
+    return files
+
+
+def group_posts(files, site):
+    """Create and sort a list of posts"""
+    for f in files:
+        extension = f.get_extension()
+        if extension == ".html" and "content/" in f.src:
+            site.posts.append(f)
+    site.posts.sort(key=lambda post: post.metadata["date"], reverse=True)
+    return files
+
+
+def dirlist(path):
+    """Return all directories in path as a list"""
+    dirs = []
+    while True:
+        path, directory = os.path.split(path)
+        if directory != "":
+            dirs.append(directory)
+        else:
+            if path != "":
+                dirs.append(path)
+            break
+    dirs.reverse()
+    return dirs[:-1]
+
+
+def create_urls(files, site):
+    pages = {}
+
+    for f in files:
+        directories = dirlist(f.src)
+
+        # Posts
+        if directories[0] == "content" and len(directories) == 2:
+            key = "/".join(directories)
+
+            if key not in pages:
+                pages[key] = {
+                    "metadata": {},
+                    "files": []
+                }
+
+            if f.metadata.get("slug") is not None:
+                pages[key]["metadata"] = f.metadata
+
+            pages[key]["files"].append(f)
+
+        # Everything else
+        else:
+            slug = f.metadata.get("slug")
+            dest = slug if slug is not None else f.dest
+            f.dest = os.path.join(site.output_dir, dest)
+
+    # Write urls for files in pages directories
+    for key, data in pages.iteritems():
+        base, _ = os.path.split(data["metadata"]["slug"])
+        for f in data["files"]:
+            filename = os.path.basename(f.dest)
+            f.dest = os.path.join(site.output_dir, base, filename)
+
+    for f in files:
+        # Removes the output_dir from file path
+        components = dirlist(f.dest)
+
+        if site.output_dir != "":
+            components = components[1:]
+
+        components.insert(0, site.base_url)
+        components.append(os.path.basename(f.dest))
+        f.url = "/".join(components)
+
+        if f.url.endswith("index.html"):
+            f.url = f.url.replace("index.html", "")
+        f.url = remove_trailing_slash(f.url)
+
+    return files
+
+
+def compile_scss(compiler, files, site):
+    """Compile all scss files"""
+    for f in files:
+        filename = os.path.basename(f.dest)
+        if not f.encoding or f.get_extension() != ".scss" or \
+                filename.startswith("_"):
+            continue
+        f.contents = compiler.compile_string(f.contents)
+        f.set_extension(".css")
+    return files
+
+
+def _append_to_filename(filepath, string):
+    root, ext = os.path.splitext(filepath)
+    filename = os.path.basename(root)
+    path = os.path.join(os.path.dirname(root), filename)
+    return "{}-{}{}".format(path, string, ext)
+
+
+def hash_static(extensions, files, site):
+    """Append a hash to any file with a given extension
+
+    The file can be looked up in the sites static map using the relative
+    filepath to the repo root
+    """
+    for f in files:
+        if f.extension not in extensions:
+            continue
+
+        hasher = hashlib.md5()
+        hasher.update(f.contents)
+        md5 = hasher.hexdigest()
+
+        f.url = _append_to_filename(f.url, md5)
+        f.dest = _append_to_filename(f.dest, md5)
+
+        site.static[os.path.relpath(f.src)] = f.url
+    return files
+
+
+def write_files(files, site):
+    """Write all files to their destination path"""
+    if site.output_dir != "":
+        try:
+            shutil.rmtree(site.output_dir)
+        except OSError:
+            pass
+        os.makedirs(site.output_dir)
+
+    for f in files:
+        # Create the files subdirectories
+        dirname = os.path.dirname(f.dest)
+        if dirname != "" and not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        if f.encoding:
+            with codecs.open(f.dest, "w", f.encoding) as fp:
+                fp.write(f.contents)
+        else:
+            with open(f.dest, "wb") as fp:
+                fp.write(f.contents)
+
+    return files
+
+
+def make_pipeline(pipeline, config):
+    files = []
+    site = Site(**config)
+    for fn in pipeline:
+        files = fn(files, site)
+    logger.info("Generated files")
+    return files
+
+
+def develop(config):
+    """Generate and serve site with live reload support"""
+    pipeline = functools.partial(make_pipeline, [
+        functools.partial(get_files, FILE_DIRS),
+        open_files,
+        parse_metadata,
+        compile_markdown,
+        group_posts,
+        functools.partial(compile_scss, ScssCompiler(output_style="expanded")),
+        create_urls,
+        functools.partial(hash_static, HASH_FILE_EXTS),
+        functools.partial(compile_jinja, "templates"),
+        write_files
+    ], config)
+
+    logging.getLogger("livereload").disabled = True
+    logging.getLogger("tornado.access").disabled = True
+    server = Server()
+
+    # Watch files that are outputted from first invocation of pipeline
+    files = pipeline()
+    for f in files:
+        server.watch(f.src, pipeline)
+
+    # Watch support files
+    for f in get_files(["templates"]):
+        server.watch(f.src, pipeline)
+
+    result = urlparse.urlsplit(config["base_url"])
+    port = result.port
+    host = result.hostname
+
+    logger.setLevel(logging.INFO)
+    logger.info("Serving on {}".format(config["base_url"]))
+    server.serve(root=config["output_dir"], port=port, host=host)
+
+
+def publish(config):
+    """Generate and publish site to git hub pages"""
+    pipeline = functools.partial(make_pipeline, [
+        functools.partial(get_files, FILE_DIRS),
+        open_files,
+        parse_metadata,
+        compile_markdown,
+        group_posts,
+        functools.partial(compile_scss, ScssCompiler(
+            output_style="compressed")),
+        create_urls,
+        functools.partial(hash_static, HASH_FILE_EXTS),
+        functools.partial(compile_jinja, "templates"),
+    ], config)
+
+    files = pipeline()
+
+    # Save the current branch name and checkout gh-pages
+    git_get_branch = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+    branch = subprocess.check_output(git_get_branch).rstrip()
+    subprocess.check_output(["git", "checkout", "gh-pages"])
+
+    # Stage all current files for removal
+    skip = ["CNAME"]
+    tracked = subprocess.check_output(["git", "ls-files"]).splitlines()
+    remove = [f for f in tracked if f not in skip]
+    result = subprocess.check_output(["git", "rm"] + remove)
+
+    # Add all generated files
+    files = write_files(files, Site(**config))
+    files = [f.dest for f in files]
+    subprocess.check_output(["git", "add"] + files)
+
+    # Push and checkout the previous branch
+    subprocess.check_output(["git", "commit", "-m", "Update files"])
+    subprocess.check_output(["git", "push", "origin", "gh-pages"])
+    subprocess.check_output(["git", "checkout", branch])
+
+
+def main():
+    args = docopt(__doc__)
+
+    config = {
+        "base_url": args["--base-url"],
+        "output_dir": args["--output-dir"]
+    }
+
+    modes = {
+        "develop": develop,
+        "publish": publish
+    }
+
+    if args["<mode>"] in modes:
+        if args["<mode>"] == "publish":
+            config["output_dir"] = ""
+            config["fb_app_id"] = FB_APP_ID
+            config["ga_account"] = GA_ACCOUNT
+            config["base_url"] = SITE_URL
+        modes[args["<mode>"]](config)
+    else:
+        print(__doc__)
+
+
+if __name__ == "__main__":
+    main()
