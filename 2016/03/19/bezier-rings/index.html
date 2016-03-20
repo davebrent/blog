@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- 23706cfffd9c97199025a5b05facb155dfd9dfac -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>dbp | Drawing circular arcs with bezier curves</title>
+<meta name="description" content="Drawing an arc between two angles with bezier curves">
+<meta property="og:locale" content="en_GB" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Drawing circular arcs with bezier curves" />
+<meta property="og:url" content="http://davepoulter.net/2016/03/19/bezier-rings" />
+
+
+<meta property="og:description" content="Drawing an arc between two angles with bezier curves" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:description" content="Drawing an arc between two angles with bezier curves"/>
+<meta name="twitter:title" content="Drawing circular arcs with bezier curves"/>
+
+<meta name="twitter:creator" content="@dave_brent"/>
+
+    <meta property="fb:app_id" content="1020523678022760" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="@dave_brent">
+    <link href='http://fonts.googleapis.com/css?family=Oxygen+Mono' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://davepoulter.net/static/main-8d09f1df4f2f99c337947cee900dae91.css">
+  </head>
+  <body>
+  <div id="container">
+    <div id="header">
+      <a href="http://davepoulter.net">davepoulter.net</a>
+      <a href="https://github.com/davebrent" target="_blank">Github</a>
+    </div>
+    <div id="content" role="main">
+<div class="post">
+  <div class="post-header">
+    <h1>Drawing circular arcs with bezier curves</h1>
+  </div>
+  <div class="post-body">
+    <div class="propbox-16/9">
+  <div class="propbox__inner">
+    <div id="gui"></div>
+    <canvas class="example" style="width: 100%"></canvas>
+  </div>
+</div>
+
+<h2>Notes</h2>
+<ul>
+<li>A complete circle can be approximated with 4 bezier curves</li>
+<li>So a single arc can be draw with 4 or fewer bezier curves</li>
+<li>One curve in the arc will not have an angle of <code>PI/2</code> (but the rest will)</li>
+<li>Control points can calculated from a curves start and end point (see sources)</li>
+</ul>
+<h2>Sources</h2>
+<ul>
+<li><a href="http://itc.ktu.lt/itc354/Riskus354.pdf">Approximation of a cubic bezier curve by circular arc and vice versa</a></li>
+<li><a href="http://hansmuller-flex.blogspot.co.uk/2011/10/more-about-approximating-circular-arcs.html">More About Approximating Circular Arcs With a Cubic Bezier Path</a></li>
+</ul>
+<script src="//cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.min.js"></script>
+
+<script src="http://davepoulter.net/2016/03/19/bezier-rings/main.js"></script>
+  </div>
+</div>
+
+    </div>
+  </div>
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-35028388-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+</body>
+</html>
