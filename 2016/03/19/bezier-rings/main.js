@@ -30,7 +30,6 @@
 
   function bezier_arc (radius, start, end) {
     var PI_OVER_TWO = Math.PI / 2.0;
-    var TWO_PI = Math.PI * 2;
 
     // Sanitize input
     if (start > end) {
