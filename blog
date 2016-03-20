@@ -48,7 +48,6 @@ FILE_DIRS = [
 ]
 
 HASH_FILE_EXTS = [
-    ".js",
     ".css"
 ]
 
@@ -370,7 +369,10 @@ def develop(config):
         parse_metadata,
         compile_markdown,
         group_posts,
-        functools.partial(compile_scss, ScssCompiler(output_style="expanded")),
+        functools.partial(compile_scss, ScssCompiler(
+            output_style="expanded",
+            search_path=["static"]
+        )),
         create_urls,
         functools.partial(hash_static, HASH_FILE_EXTS),
         functools.partial(compile_jinja, "templates"),
@@ -408,7 +410,9 @@ def publish(config):
         compile_markdown,
         group_posts,
         functools.partial(compile_scss, ScssCompiler(
-            output_style="compressed")),
+            output_style="compressed",
+            search_path=["static"]
+        )),
         create_urls,
         functools.partial(hash_static, HASH_FILE_EXTS),
         functools.partial(compile_jinja, "templates"),
