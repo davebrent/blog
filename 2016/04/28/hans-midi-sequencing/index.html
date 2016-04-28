@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- 0d53510ab7d98c358437cbdadc85969c6ae60dc0 -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>dbp | Hans: MIDI Sequencing</title>
+<meta name="description" content="Hans MIDI sequencing prototype">
+<meta property="og:locale" content="en_GB" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Hans: MIDI Sequencing" />
+<meta property="og:url" content="http://davepoulter.net/2016/04/28/hans-midi-sequencing" />
+
+
+<meta property="og:description" content="Hans MIDI sequencing prototype" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:description" content="Hans MIDI sequencing prototype"/>
+<meta name="twitter:title" content="Hans: MIDI Sequencing"/>
+
+<meta name="twitter:creator" content="@dave_brent"/>
+
+    <meta property="fb:app_id" content="1020523678022760" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="@dave_brent">
+    <link href='http://fonts.googleapis.com/css?family=Oxygen+Mono' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://davepoulter.net/static/main-8d09f1df4f2f99c337947cee900dae91.css">
+  </head>
+  <body>
+  <div id="container">
+    <div id="header">
+      <a href="http://davepoulter.net">davepoulter.net</a>
+      <a href="https://github.com/davebrent" target="_blank">Github</a>
+    </div>
+    <div id="content" role="main">
+<div class="post">
+  <div class="post-header">
+    <h1>Hans: MIDI Sequencing</h1>
+  </div>
+  <div class="post-body">
+    <p>I've been prototyping the sequencing part of <a href="https://github.com/davebrent/hans">hans</a> recently and have some
+random thoughts related to sending MIDI events that I wanted to jot down before
+I forget.</p>
+<p>Bit of background: the basic idea is a function sends periodic <em>events</em> with a
+given duration. These events may be sent to different <em>devices</em>, in this case a
+MIDI device. These events may then be updated over time, so as to trigger a
+corresponding note off event or a new CC value etc.</p>
+<ul>
+<li>SO what rate should a function be called, that sends a stream of midi control
+  change events, interpolating between two given values over a specificed
+  amout of time?</li>
+<li>How are many control change events handled? Should they be sequenced in some
+  way to avoid congestion?</li>
+<li>What are the consequences of MIDI congestion? (an explosion? damaged
+  hardware? or just terrible timing?)</li>
+<li>MIDI has a fixed transfer rate of <a href="https://en.wikipedia.org/wiki/MIDI#Technical_specifications">31.25 Kbaud</a> (around 320 microseconds
+  per byte).</li>
+<li>Majority of messages are going to be 3 bytes long (note &amp; CC events)?</li>
+<li>So roughly, things are gonna be moving at 1 message per millisecond?</li>
+<li>From a brief skim of <a href="https://www.presonus.com/community/Learn/The-Truth-About-Digital-Audio-Latency">The Truth About Digital Audio Latency</a> things will
+  start to feel a bit weird when an event has a delay that excedes 12-15ms</li>
+<li>So maybe a nice round number to balence sending loads of events and it being
+  processed in time is a window of 10ms?</li>
+<li>In c++ Im using <code>std::this_thread::sleep_for</code> which will block the
+  execution of the thread for <a href="http://en.cppreference.com/w/cpp/thread/sleep_for"><em>at least</em></a> the given time, ie. it may be
+  longer, so... how much longer may it be? Is it worth worrying about this?
+  Are the alternatives?</li>
+<li>Does <a href="https://www.music.mcgill.ca/~gary/rtmidi/">RtMIDI</a> pad clock events with two extra bytes? Does this matter?</li>
+<li>Is there any hardware that can make this better if this all proves to a bit
+  rubbish?</li>
+</ul>
+<p>Here are some numbers from sending combinations of clock message, single
+quarter note and a single continous control change event (also at the interval).
+Using the Scarlett 18i8 to an Elektron. Just to see roughly whats going on.</p>
+<pre><code>|Interval (microseconds)|Target (bpm)|Displayed (bpm)|Clock|Note|Control|
+|-----------------------|------------|---------------|-----|----|-------|
+|320                    |120         |118            |X    |    |       |
+|320                    |120         |118-119        |X    |X   |       |
+|320                    |120         |47-48          |X    |    |X      |
+|320                    |120         |47-48          |X    |X   |X      |
+|-----------------------|------------|---------------|-----|----|-------|
+|640                    |120         |117-118        |X    |    |       |
+|640                    |120         |116-117        |X    |X   |       |
+|640                    |120         |98-99          |X    |    |X      |
+|640                    |120         |97-99          |X    |X   |X      |
+|-----------------------|------------|---------------|-----|----|-------|
+|960                    |120         |116            |X    |    |       |
+|960                    |120         |116-117        |X    |X   |       |
+|960                    |120         |116-117        |X    |    |X      |
+|960                    |120         |116-117        |X    |X   |X      |
+|-----------------------|------------|---------------|-----|----|-------|
+|1600                   |120         |110-114        |X    |    |       |
+|1600                   |120         |110-112        |X    |X   |       |
+|1600                   |120         |115-117        |X    |    |X      |
+|1600                   |120         |115-117        |X    |X   |X      |
+
+Quarter note in milliseconds
+120BPM = 500ms
+117BPM = 513ms
+114BPM = 526ms
+110BPM = 545ms
+</code></pre>
+<ul>
+<li>Not surprising values below 960 microseconds we're shocking but nice to see
+  nothing blew up.</li>
+<li>How come it never reached the target BPM?</li>
+<li>Looks like its not gonna be particularly great to send all events at the same
+  interval but should be sequenced in some way</li>
+<li>Seems this updating of an event is going to be very device dependant...</li>
+</ul>
+  </div>
+  
+  <div class="post-comments">
+    <div id="disqus_thread"></div>
+    <script>
+      var disqus_config = function () {
+        this.page.url = "http://davepoulter.net/2016/04/28/hans-midi-sequencing";
+        this.page.identifier = "2016/04/28/hans-midi-sequencing/index.html";
+      };
+
+      (function() {
+        var d = document, s = d.createElement('script');
+        s.src = '//davepoulternet.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+      })();
+    </script>
+    <noscript>
+      Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">
+        comments powered by Disqus.
+      </a>
+    </noscript>
+  </div>
+  
+</div>
+
+    </div>
+  </div>
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-35028388-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+</body>
+</html>
