@@ -8,6 +8,11 @@ markdown: true
 comments: true
 ---
 
+Ive been working on improving some of the core bits of Hans over the past two
+weeks, by trying to simplify the input data for the whole thing. Think its gone
+pretty well, should find out when I get to simplify the actual code for the
+runtime/engine/player how well its gone, but Im quite hopeful...
+
 ## Original aims
 
 * To create a single file containing **all** runtime data, config and assets
