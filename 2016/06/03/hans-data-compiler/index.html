@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- a55627c42bab6fccca3807ff591734436c901340 -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>dbp | Hans: Data compiler prototype</title>
+<meta name="description" content="Hans data compiler prototype">
+<meta property="og:locale" content="en_GB" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Hans: Data compiler prototype" />
+<meta property="og:url" content="http://davepoulter.net/2016/06/03/hans-data-compiler" />
+
+
+<meta property="og:description" content="Hans data compiler prototype" />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:description" content="Hans data compiler prototype"/>
+<meta name="twitter:title" content="Hans: Data compiler prototype"/>
+
+<meta name="twitter:creator" content="@dave_brent"/>
+
+    <meta property="fb:app_id" content="1020523678022760" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="@dave_brent">
+    <link href='http://fonts.googleapis.com/css?family=Oxygen+Mono' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://davepoulter.net/static/main-8d09f1df4f2f99c337947cee900dae91.css">
+  </head>
+  <body>
+  <div id="container">
+    <div id="header">
+      <a href="http://davepoulter.net">davepoulter.net</a>
+      <a href="https://github.com/davebrent" target="_blank">Github</a>
+    </div>
+    <div id="content" role="main">
+<div class="post">
+  <div class="post-header">
+    <h1>Hans: Data compiler prototype</h1>
+  </div>
+  <div class="post-body">
+    <h2>Original aims</h2>
+<ul>
+<li>To create a single file containing <strong>all</strong> runtime data, config and assets
+  etc. for creating some cool audio visual thing.</li>
+<li>The file should be simple to load into the runtime to create the cool audio
+  visual thing.</li>
+<li>The "compiler" needs to be flexible and have points of extension (so I dont
+  have to re-write everything again).</li>
+</ul>
+<h2>Why?</h2>
+<ul>
+<li>Currently already doing something like this, but really badly with an ad-hoc
+  python script, sqlite and sending RPC commands to C++, which is ends being
+  slower than it really should be, painful to add new things and well confusing.</li>
+<li>Not really sure how its going to work further down the line when Im adding
+  audio, images, meshes etc.</li>
+<li>A relational database isnt really adding much in this situation.</li>
+<li>Its also not particularly straight forward to get all the data back out of
+  sqlite into C++ structs, so no big win there either.</li>
+<li>Theres also a lack of code sharing with the C++ side of the code base, as
+  I havent added any python bindings because...</li>
+<li>Im also trying to simplify the number of languages and data formats down to
+  just Scheme and C++ (for my own sanity).</li>
+</ul>
+<h2>Implementation notes</h2>
+<ul>
+<li>Objects are declared in scheme, as functions that return srfi-9 records</li>
+<li>The records are basically a configuration for what the objects corresponding
+  C++ code needs from the runtime to operate correctly.</li>
+<li>A graph is represented in scheme as a list of objects &amp; a list of connections.</li>
+<li>A program is the combination of an audio graph and a graphics graph.</li>
+<li>Input to the compile function is a list of programs and a list of complile
+  "passes".</li>
+<li>A "pass" is a function that transforms the list of programs in some way (or
+  validates it in some way).</li>
+<li>During one of these passes the C++ part of an object needs to be loaded from
+  its dynamic library &amp; parse its creation arguments (from scheme) and have its
+  initial state included in the final output file.</li>
+<li>After all passes are complete, the data is used to create the C++ runtime
+  structs, which are then written "as is" to the output file.</li>
+</ul>
+<h2>Thoughts</h2>
+<ul>
+<li>The code is pretty rushed and crusty but think achieved the above aims and
+  I think is already more understandable from how it was all currently working.</li>
+<li>The compiler can be extended by adding another "pass" which has access to all
+  object graphs.</li>
+<li>Does Guiles implementation of "map" apply the procedure in the order of the
+  list?</li>
+<li>Maybe write the data correctly aligned so it can be used safely "as is"?</li>
+<li>Currently the compile function writes the data straight to disk, instead it
+  might simplify testing if it returned something (such as the data it created
+  as a bytevector)</li>
+<li>Lots of boring code shuffling associative lists to C structs. Could possibly
+  have some binding mechanism to simplify adding new structs in the future.</li>
+<li>Lots of boring code binding enums to symbols in scheme.</li>
+<li>Cant quite see a simple way of applying "patches" of compiled data to a
+  previously outputted file in this current implementation.</li>
+<li>Writing objects initial state is a bit of a pain as it increases the overhead
+  of writing new objects and its initial state currently needs to be of a fixed
+  size. Might be less of a pain if its size could be more dynamic.</li>
+</ul>
+  </div>
+  
+  <div class="post-comments">
+    <div id="disqus_thread"></div>
+    <script>
+      var disqus_config = function () {
+        this.page.url = "http://davepoulter.net/2016/06/03/hans-data-compiler";
+        this.page.identifier = "2016/06/03/hans-data-compiler/index.html";
+      };
+
+      (function() {
+        var d = document, s = d.createElement('script');
+        s.src = '//davepoulternet.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+      })();
+    </script>
+    <noscript>
+      Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">
+        comments powered by Disqus.
+      </a>
+    </noscript>
+  </div>
+  
+</div>
+
+    </div>
+  </div>
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-35028388-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+</body>
+</html>
