@@ -177,3 +177,36 @@ a:hover {
     list-style: none;
   }
 }
+
+.home {
+  color: #333;
+  margin: 36px;
+
+  a, p, em {
+    font-family: 'Vollkorn', serif;
+    font-size: 26px;
+    line-height: 36px;
+    margin-bottom: 36px;
+  }
+
+  a {
+    color: #427df4;
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: #f44242;
+    cursor: pointer;
+  }
+
+  em {
+    font-style: italic;
+  }
+}
+
+@media #{$small} {
+  .home {
+    max-width: 640px;
+    margin: 64px 72px;
+  }
+}
